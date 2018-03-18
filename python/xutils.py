@@ -36,3 +36,28 @@ def profile():
             return vars["r"]
         return handle
     return deco
+
+def make_list(array):
+    head = ListNode('head')
+    cur = head
+    for item in array:
+        cur.next = ListNode(item)
+        cur = cur.next
+    return head.next
+
+def make_array(head):
+    array = []
+    cur = head
+    while cur:
+        array.append(cur.val)
+        cur = cur.next
+    return array
+
+
+class ListNode:
+    def __init__(self, x, next=None):
+        self.val = x
+        self.next = next
+    
+    def __str__(self):
+        return str(make_array(self))
