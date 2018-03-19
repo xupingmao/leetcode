@@ -1,7 +1,7 @@
 # encoding=utf-8
 # @author xupingmao
 # @since 2016/12/09
-# @modified 2018/02/15 17:46:08
+# @modified 2018/03/19 23:25:47
 
 import time
 
@@ -61,3 +61,8 @@ class ListNode:
     
     def __str__(self):
         return str(make_array(self))
+
+    def __repr__(self):
+        return str(make_array(self))
+        
+
