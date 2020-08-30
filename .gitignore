@@ -1,2 +1,4 @@
 __pycache__
 *.pyc
+/static/lib/highlight.js/
+.DS_Store
