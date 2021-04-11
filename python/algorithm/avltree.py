@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 # @author xupingmao
 # @since 2021/04/11 18:45:38
-# @modified 2021/04/11 21:46:51
+# @modified 2021/04/11 22:23:21
 # @filename avltree.py
 
 """二叉平衡树
@@ -22,6 +22,9 @@
             \
              2
 
+AL != None; ALL != None
+Root = AL; AL.right = A; A.left = AL.right
+
 2.对α的左儿子的右子树进行一次插入（左右，双旋转解决，也就是先转成左左，然后单旋转）
 
                 6                6                     4
@@ -32,6 +35,10 @@
               /            / \
              3            1   3
 
+AL != None; ALR != None; 
+2.1 Root = A; A.left = ALR; ALR.left = AL; AL.right = ALR.left
+2.2 Root = AL; AL.right = A; A.left = AL.right
+
 3.对α的右儿子的左子树进行一次插入（右左，双旋转解决，也就是先转成左左，然后单旋转）
 
                 2                   2                   3
@@ -41,12 +48,9 @@
                  3   6                   5         1     4   6
                   \                     / \
                    4                   4   6
-3.1 Root(1) = A; A.right = ARL; ARL.right = AR; AR.left = ARL.right
-3.2 Root(2) = AR(1) = ARL;   => Root = ARL
-    AR(1).left = A(1) = A;   => ARL.left = A
-    A(1).right = AR(1).left; => A.right  = ARL.left
+3.1 Root = A; A.right = ARL; ARL.right = AR; AR.left = ARL.right
+3.2 Root = AR; AR.left = A; A.right = AR.left
     
-合并之后: Root = ARL; A.right = ARL.left; AR.left = ARL.right; ARL.left = A; ARL.right = AR;
 
 4.对α的右儿子的右子树进行一次插入（右右，单旋转解决）
 
@@ -178,7 +182,201 @@ class AVLTree():
             return self.rootNode.height
         else:
             return 0
+
+    def rebalance1(self, A):
+        F = A.parent
+        debug_print("rebalance: case 1")
+
+        B = AL = A.leftChild
+        C = ALL = B.leftChild
+        """Rebalance, case LLC """
+
+        assert A is not None
+        assert AL is not None
+        assert ALL is not None
+
+        A.set_left_child(AL.rightChild)
+        AL.set_right_child(A)
+
+        if F is None:
+            self.rootNode = B
+            self.rootNode.parent = None                    
+        else:
+            if F.rightChild == A:
+                F.set_right_child(AL)
+            else:
+                F.set_left_child(AL)
+
+        self.recompute_heights (A)
+        self.recompute_heights (AL.parent) 
+
+    def rebalance2(self, A):
+        # 左右，双旋转解决，也就是先转成左左，然后单旋转
+        F = A.parent  
+        debug_print("rebalance: case 2")
+        AL = A.leftChild
+        ALR = AL.rightChild
+
+        assert A != None
+        assert AL != None
+        assert ALR != None
+
+        # 2.1 Root = A; A.left = ALR; ALR.left = AL; AL.right = ALR.left
+        A.set_left_child(ALR)
+        ALR.set_left_child(AL)
+        AL.set_right_child(ALR.leftChild)
+
+        # 2.2 Root = AL; AL.right = A; A.left = AL.right
+
+        AL = A.leftChild
+        ALR = AL.rightChild
+
+        AL.set_right_child(A)
+        A.set_left_child(AL.rightChild)
+
+
+        if F is None:
+           self.rootNode = AL
+           self.rootNode.parent = None
+        else:
+           if F.rightChild == A:
+               F.set_right_child(AL)
+           else:
+               F.set_left_child(AL)
+
+        self.recompute_heights (A)
+        self.recompute_heights (AL)
+
+
+    def rebalance2_old(self, A):
+        # 左右，双旋转解决，也就是先转成左左，然后单旋转
+        F = A.parent  
+        debug_print("rebalance: case 2")
+        B = A.leftChild
+        C = B.rightChild 
+        """Rebalance, case LRC """
+        assert (not A is None and not B is None and not C is None)
+        A.leftChild = C.rightChild
+        if A.leftChild:
+            A.leftChild.parent = A
         
+        B.rightChild = C.leftChild
+        if B.rightChild:
+            B.rightChild.parent = B
+
+        C.leftChild = B
+        B.parent = C
+        C.rightChild = A
+        A.parent = C
+
+
+        if F is None:
+           self.rootNode = C
+           self.rootNode.parent = None
+        else:
+           if F.rightChild == A:
+               F.set_right_child(C)
+           else:
+               F.set_left_child(C)
+
+        self.recompute_heights (A)
+        self.recompute_heights (B)
+
+
+    def rebalance3(self, A):
+        # 右子树偏左（情况3，双旋转）
+        # 通过两次旋转,5次变换
+        debug_print("rebalance: case 3")
+        F = A.parent
+        AR = A.rightChild
+        ARL = AR.leftChild
+
+        assert A is not None
+        assert AR is not None
+        assert ARL is not None
+
+        # 第一次旋转
+        # 3.1 Root = A; A.right = ARL; ARL.right = AR; AR.left = ARL.right
+        A.set_right_child(ARL)
+        ARL.set_right_child(AR)
+        AR.set_left_child(ARL.rightChild)
+
+        # 第二次单旋转
+        # Root = AR; AR.left = A; A.right = AR.left
+        AR = A.rightChild
+        ARL = AR.leftChild
+
+        AR.set_left_child(A)
+        A.set_right_child(AR.leftChild)
+
+        if F is None:                                                             
+            self.rootNode = AR
+            self.rootNode.parent = None                                                    
+        else:                                                                        
+            if F.rightChild == A:                                                         
+                F.set_right_child(AR)                                                                               
+            else:
+                F.set_left_child(AR)
+
+        self.recompute_heights (A)
+        self.recompute_heights (AR)
+
+    def rebalance3_old(self, A):
+        # 右子树偏左（情况3，双旋转），双旋转其实有2次旋转可以合并
+        # 合并之后: Root = ARL; A.right = ARL.left; AR.left = ARL.right; ARL.left = A; ARL.right = AR;
+        debug_print("rebalance: case 3")
+        B = AR = A.rightChild
+        C = ARL = AR.leftChild
+
+        assert A is not None
+        assert AR is not None
+        assert ARL is not None
+
+        A.set_right_child(ARL.leftChild)
+        AR.set_left_child(ARL.rightChild)
+        ARL.set_left_child(A)
+        ARL.set_right_child(AR)
+
+        if F is None:                                                             
+            self.rootNode = C
+            self.rootNode.parent = None                                                    
+        else:                                                                        
+            if F.rightChild == A:                                                         
+                F.set_right_child(C)                                                                               
+            else:                                                                      
+                F.set_left_child(C)
+
+        self.recompute_heights (A)
+        self.recompute_heights (AR)
+
+    def rebalance4(self, A):
+        # Root = AR; AR.left = A; A.right = AR.left
+        F = A.parent
+        debug_print("rebalance: case 4")
+        AR = A.rightChild
+        ARR = AR.rightChild
+
+        assert A is not None
+        assert AR is not None
+        assert ARR is not None
+
+        A.set_right_child(AR.leftChild)
+        AR.set_left_child(A)
+                                                  
+        if F is None:
+            # A是根节点
+            self.rootNode = AR
+            self.rootNode.parent = None                                                   
+        else:
+            if F.rightChild == A:
+                F.set_right_child(AR)                                                                
+            else:                                                                      
+                F.set_left_child(AR)
+
+        self.recompute_heights (A) 
+        self.recompute_heights (AR.parent)
+
+    
     def rebalance (self, node_to_rebalance):
         self.rebalance_count += 1
         A = node_to_rebalance 
@@ -190,119 +388,20 @@ class AVLTree():
             if right_balance <= 0:
                 # 右子树偏右（情况4）
                 """Rebalance, case RRC """
-                debug_print("rebalance: case 4")
-                AR = A.rightChild
-                ARR = AR.rightChild
-
-                assert A is not None
-                assert AR is not None
-                assert ARR is not None
-
-                A.set_right_child(AR.leftChild)
-                AR.set_left_child(A)
-                                                          
-                if F is None:
-                    # A是根节点
-                    self.rootNode = AR
-                    self.rootNode.parent = None                                                   
-                else:
-                    if F.rightChild == A:
-                        F.set_right_child(AR)                                                                
-                    else:                                                                      
-                        F.set_left_child(AR)
-
-                self.recompute_heights (A) 
-                self.recompute_heights (AR.parent)
-
+                self.rebalance4(A)
             else:
                 # 右子树偏左（情况3，双旋转）
                 # 合并之后: Root = ARL; A.right = ARL.left; AR.left = ARL.right; ARL.left = A; ARL.right = AR;
-
-                debug_print("rebalance: case 3")
-                B = AR = A.rightChild
-                C = ARL = AR.leftChild
-
-                assert A is not None
-                assert AR is not None
-                assert ARL is not None
-
-                A.set_right_child(ARL.leftChild)
-                AR.set_left_child(ARL.rightChild)
-                ARL.set_left_child(A)
-                ARL.set_right_child(AR)
-
-                if F is None:                                                             
-                    self.rootNode = C
-                    self.rootNode.parent = None                                                    
-                else:                                                                        
-                    if F.rightChild == A:                                                         
-                        F.set_right_child(C)                                                                               
-                    else:                                                                      
-                        F.set_left_child(C)
-
-                self.recompute_heights (A)
-                self.recompute_heights (AR)
-
+                self.rebalance3(A)
         else:
             # 左子树比右子树高（情况1和情况2）
             assert(node_to_rebalance.balance() == +2)
             if node_to_rebalance.leftChild.balance() >= 0:
                 # 左子树偏左（情况1）
-                debug_print("rebalance: case 1")
-
-                B = AL = A.leftChild
-                C = ALL = B.leftChild
-                """Rebalance, case LLC """
-
-                assert A is not None
-                assert AL is not None
-                assert ALL is not None
-
-                A.leftChild = B.rightChild
-                if (A.leftChild): 
-                    A.leftChild.parent = A
-                    
-                B.rightChild = A
-                A.parent = B
-                if F is None:
-                    self.rootNode = B
-                    self.rootNode.parent = None                    
-                else:
-                    if F.rightChild == A:
-                        F.rightChild = B
-                    else:
-                        F.leftChild = B
-                    B.parent = F
-                self.recompute_heights (A)
-                self.recompute_heights (B.parent) 
+                self.rebalance1(A)
             else:
                 # 左子树偏右（情况2）
-                debug_print("rebalance: case 2")
-                B = A.leftChild
-                C = B.rightChild 
-                """Rebalance, case LRC """
-                assert (not A is None and not B is None and not C is None)
-                A.leftChild = C.rightChild
-                if A.leftChild:
-                    A.leftChild.parent = A
-                B.rightChild = C.leftChild
-                if B.rightChild:
-                    B.rightChild.parent = B
-                C.leftChild = B
-                B.parent = C
-                C.rightChild = A
-                A.parent = C
-                if F is None:
-                   self.rootNode = C
-                   self.rootNode.parent = None
-                else:
-                   if (F.rightChild == A):
-                       F.rightChild = C
-                   else:
-                       F.leftChild = C
-                   C.parent = F
-                self.recompute_heights (A)
-                self.recompute_heights (B)
+                self.rebalance2(A)
                 
     def sanity_check (self, *args):
         if len(args) == 0:
