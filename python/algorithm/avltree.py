@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 # @author xupingmao
 # @since 2021/04/11 18:45:38
-# @modified 2021/04/11 22:23:21
+# @modified 2021/04/11 22:46:17
 # @filename avltree.py
 
 """二叉平衡树
@@ -119,6 +119,10 @@ class Node():
             right_height = self.rightChild.height
 
         return left_height - right_height
+
+    def is_balanced(self):
+        diff = self.balance()
+        return abs(diff) <= 1
 
     def set_left_child(self, node):
         self.leftChild = node
@@ -621,7 +625,7 @@ class AVLTree():
         # rebalance
         node = parent
         while (node):
-            if not node.balance() in [-1, 0, 1]:
+            if not node.is_balanced():
                 self.rebalance(node)
             node = node.parent
         
@@ -644,7 +648,7 @@ class AVLTree():
         # rebalance
         node = parent
         while (node):
-            if not node.balance() in [-1, 0, 1]:
+            if not node.is_balanced():
                 self.rebalance(node)
             node = node.parent
         
